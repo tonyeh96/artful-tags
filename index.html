@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Artful 作品详情</title>
+<style>
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#1a1a2e;color:#cfcfe6;
+       display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+  .box{text-align:center}
+  .spin{width:28px;height:28px;border:3px solid #33335a;border-top-color:#c9a84c;
+        border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 14px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .t{font-size:14px;color:#9a9ac0}
+</style>
+</head>
+<body>
+<div class="box"><div class="spin"></div><div class="t">正在跳转到作品详情…</div></div>
+<script>
+// 动态二维码中枢: 读 ?c=编号 -> 查 mapping.json -> 跳转目的地
+// 物理卡上的码只编码 ?c=编号, 目的地全在 mapping.json, 改它即换地址, 卡不重印
+const FALLBACK = 'https://a90aef4830e4480bb6637fe316b83901.app.codebuddy.work';
+(async () => {
+  const c = new URLSearchParams(location.search).get('c');
+  try {
+    const MAP = await (await fetch('mapping.json')).json();
+    if (c && MAP[c]) { location.replace(MAP[c]); return; }
+    if (c) { location.replace(FALLBACK + '/?art=' + encodeURIComponent(c)); return; }
+  } catch (e) { /* mapping 读取失败走兜底 */ }
+  location.replace(FALLBACK);
+})();
+</script>
+</body>
+</html>

@@ -6,29 +6,89 @@
 <title>Artful 作品详情</title>
 <style>
   body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#1a1a2e;color:#cfcfe6;
-       display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-  .box{text-align:center}
+       display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:24px;box-sizing:border-box}
+  .box{text-align:center;max-width:340px}
   .spin{width:28px;height:28px;border:3px solid #33335a;border-top-color:#c9a84c;
         border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 14px}
   @keyframes sp{to{transform:rotate(360deg)}}
-  .t{font-size:14px;color:#9a9ac0}
+  .t{font-size:14px;color:#9a9ac0;line-height:1.6}
+  .code{display:inline-block;margin-top:6px;padding:2px 10px;border:1px solid #33335a;border-radius:6px;
+        font-family:monospace;color:#c9a84c;font-size:13px}
+  .btn{display:inline-block;margin-top:18px;padding:11px 26px;background:#c9a84c;color:#1a1a2e;
+       border-radius:8px;text-decoration:none;font-size:15px;font-weight:600}
+  .btn:active{opacity:.8}
+  .sub{margin-top:14px;font-size:12px;color:#6a6a90}
+  .sub a{color:#9a9ac0}
+  .brand{position:fixed;bottom:18px;font-size:11px;color:#4a4a66;letter-spacing:2px}
 </style>
 </head>
 <body>
-<div class="box"><div class="spin"></div><div class="t">正在跳转到作品详情…</div></div>
+<div class="box" id="ui">
+  <div class="spin"></div>
+  <div class="t" id="msg">正在跳转到作品详情…</div>
+</div>
+<div class="brand">ARTFUL · 艺活时空</div>
 <script>
 // 动态二维码中枢: 读 ?c=编号 -> 查 mapping.json -> 跳转目的地
 // 物理卡上的码只编码 ?c=编号, 目的地全在 mapping.json, 改它即换地址, 卡不重印
 const FALLBACK = 'https://a90aef4830e4480bb6637fe316b83901.app.codebuddy.work';
-(async () => {
-  const c = new URLSearchParams(location.search).get('c');
-  try {
-    const MAP = await (await fetch('mapping.json')).json();
-    if (c && MAP[c]) { location.replace(MAP[c]); return; }
-    if (c) { location.replace(FALLBACK + '/?art=' + encodeURIComponent(c)); return; }
-  } catch (e) { /* mapping 读取失败走兜底 */ }
-  location.replace(FALLBACK);
-})();
+const ui = document.getElementById('ui');
+const msg = document.getElementById('msg');
+
+function render(html){ ui.innerHTML = html; }
+
+// 自动跳转（成功则页面离开，观众看不到下面的友好页）
+let jumped = false;
+function doJump(url){
+  if (jumped) return;
+  jumped = true;
+  location.replace(url);
+}
+
+// 可见兜底：跳转超时/被拦截 -> 让观众手动点
+function showClickToGo(url, code){
+  if (jumped) return;
+  render(
+    '<div class="t">请点击前往作品详情</div>' +
+    (code ? '<div class="code">' + code + '</div>' : '') +
+    '<a class="btn" href="' + url + '">前往作品详情</a>' +
+    '<div class="sub">若未自动跳转，请手动点击上方按钮</div>'
+  );
+}
+
+// 服务异常兜底：mapping 加载失败
+function showError(code){
+  if (jumped) return;
+  render(
+    '<div class="t">扫码服务暂时不可用<br>请稍后重试</div>' +
+    (code ? '<div class="code">' + code + '</div>' : '') +
+    '<a class="btn" href="' + FALLBACK + '">前往作品库</a>' +
+    '<div class="sub"><a href="javascript:location.reload()">点击重试</a></div>'
+  );
+}
+
+const c = new URLSearchParams(location.search).get('c');
+
+// 无编号 -> 直接进总库
+if (!c) { doJump(FALLBACK); }
+
+// 超时保护：4 秒内未跳走（被微信拦截/网络慢），显示手动按钮
+const timer = setTimeout(function(){
+  showClickToGo(c ? (FALLBACK + '/?art=' + encodeURIComponent(c)) : FALLBACK, c);
+}, 4000);
+
+fetch('mapping.json')
+  .then(function(r){ if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+  .then(function(MAP){
+    clearTimeout(timer);
+    if (c && MAP[c]) { doJump(MAP[c]); }       // 命中 -> 跳具体目的地
+    else if (c) { doJump(FALLBACK); }          // 未映射 -> 降级总库
+    else { doJump(FALLBACK); }
+  })
+  .catch(function(){
+    clearTimeout(timer);
+    showError(c);                               // mapping 加载失败 -> 友好错误页
+  });
 </script>
 </body>
 </html>

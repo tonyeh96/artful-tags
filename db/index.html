@@ -656,8 +656,16 @@ let artworks = [];
 let currentFiltered = [];
 
 async function loadArtworks() {
-  const resp = await fetch('data/artworks.json');
-  artworks = await resp.json();
+  try {
+    const resp = await fetch('data/artworks.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    artworks = await resp.json();
+  } catch (e) {
+    console.error('[gallery] 作品数据加载失败:', e);
+    const g = document.getElementById('grid');
+    if (g) g.innerHTML = '<div class="no-results">作品数据加载失败，请刷新页面重试</div>';
+    return;
+  }
   currentFiltered = artworks;
   updateCount(artworks.length);
   populateFilter();
@@ -929,8 +937,15 @@ function renderGrid(filtered) {
 
 // ═══════════════ Lightbox ═══════════════
 window.openLightboxBySerial = function(serial) {
-  const a = artworks.find(x => x.serial === serial);
-  if (!a) return;
+  let a = artworks.find(x => x.serial === serial);
+  if (!a) {
+    // 兜底：数据尚未就绪时从 SERIES_DATA 预览图匹配，避免点击无反应
+    for (const k in SERIES_DATA) {
+      const p = (SERIES_DATA[k].previews || []).find(pp => pp.serial === serial);
+      if (p) { a = p; break; }
+    }
+  }
+  if (!a) { console.warn('[gallery] 未找到作品 serial=', serial); return; }
   const lb = document.getElementById('lightbox');
 
   // Image

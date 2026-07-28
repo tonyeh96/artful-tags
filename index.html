@@ -31,16 +31,25 @@
 <script>
 // 动态二维码中枢: 读 ?c=编号 -> 查 mapping.json -> 跳转目的地
 // 物理卡上的码只编码 ?c=编号, 目的地全在 mapping.json, 改它即换地址, 卡不重印
-const FALLBACK = 'https://a90aef4830e4480bb6637fe316b83901.app.codebuddy.work';
+const FALLBACK = 'https://tonyeh96.github.io/artful-tags/db/';
 const ui = document.getElementById('ui');
 const msg = document.getElementById('msg');
 
 function render(html){ ui.innerHTML = html; }
 
+// XSS 防护：转义所有动态插入 DOM 的文本（编号来自 URL，必须转义）
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+
 // 自动跳转（成功则页面离开，观众看不到下面的友好页）
 let jumped = false;
 function doJump(url){
   if (jumped) return;
+  // 仅允许 http(s) 目的地：防止 mapping.json 被篡改后跳 javascript:/data: 等危险协议
+  if (!/^https?:\/\//i.test(url)) { showError(c); return; }
   jumped = true;
   location.replace(url);
 }
@@ -50,8 +59,8 @@ function showClickToGo(url, code){
   if (jumped) return;
   render(
     '<div class="t">请点击前往作品详情</div>' +
-    (code ? '<div class="code">' + code + '</div>' : '') +
-    '<a class="btn" href="' + url + '">前往作品详情</a>' +
+    (code ? '<div class="code">' + esc(code) + '</div>' : '') +
+    '<a class="btn" href="' + esc(url) + '">前往作品详情</a>' +
     '<div class="sub">若未自动跳转，请手动点击上方按钮</div>'
   );
 }
@@ -61,8 +70,8 @@ function showError(code){
   if (jumped) return;
   render(
     '<div class="t">扫码服务暂时不可用<br>请稍后重试</div>' +
-    (code ? '<div class="code">' + code + '</div>' : '') +
-    '<a class="btn" href="' + FALLBACK + '">前往作品库</a>' +
+    (code ? '<div class="code">' + esc(code) + '</div>' : '') +
+    '<a class="btn" href="' + esc(FALLBACK) + '">前往作品库</a>' +
     '<div class="sub"><a href="javascript:location.reload()">点击重试</a></div>'
   );
 }

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artful 标签管理后台（GitHub 登录）</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --line:#e3e6ea; --ink:#1f2933; --mut:#6b7280; --pri:#2563eb; --ok:#16a34a; --err:#dc2626; --warn:#d97706; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:12px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; }
+  #authBox { margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .who { color:var(--mut); }
+  .hint { color:var(--mut); }
+  .btn { border:1px solid var(--line); background:#fff; color:var(--ink); padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; }
+  .btn:hover { border-color:var(--pri); }
+  .btn.primary { background:var(--pri); color:#fff; border-color:var(--pri); }
+  .btn.ghost { color:var(--pri); text-decoration:none; border-color:var(--pri); }
+  details { background:var(--card); border-bottom:1px solid var(--line); padding:8px 18px; }
+  summary { cursor:pointer; color:var(--mut); font-size:13px; }
+  .cfg-grid { display:grid; grid-template-columns:120px 1fr; gap:8px; margin-top:10px; align-items:center; }
+  .cfg-grid label { color:var(--mut); }
+  .cfg-grid input { padding:6px 8px; border:1px solid var(--line); border-radius:6px; width:100%; }
+  .redirect { color:var(--pri); font-family:monospace; word-break:break-all; }
+  .tabs { display:flex; gap:4px; padding:10px 18px 0; }
+  .tab { border:1px solid var(--line); border-bottom:none; background:#eef1f4; padding:8px 16px; border-radius:8px 8px 0 0; cursor:pointer; color:var(--mut); }
+  .tab.active { background:var(--card); color:var(--ink); font-weight:600; }
+  main { padding:0 18px 40px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:0 0 10px 10px; padding:16px; display:none; }
+  .panel.active { display:block; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+  .toolbar input { padding:6px 8px; border:1px solid var(--line); border-radius:6px; }
+  .layout { display:grid; grid-template-columns:260px 1fr; gap:16px; }
+  @media (max-width:760px){ .layout{ grid-template-columns:1fr; } }
+  ul#artList { list-style:none; margin:0; padding:0; max-height:60vh; overflow:auto; border:1px solid var(--line); border-radius:8px; }
+  ul#artList li { padding:8px 10px; border-bottom:1px solid var(--line); cursor:pointer; }
+  ul#artList li:hover { background:#f0f4ff; }
+  ul#artList li.active { background:#e0eaff; font-weight:600; }
+  #artForm { border:1px solid var(--line); border-radius:8px; padding:14px; }
+  #artForm .row { display:grid; grid-template-columns:120px 1fr; gap:10px; margin-bottom:10px; align-items:start; }
+  #artForm label { color:var(--mut); padding-top:6px; }
+  #artForm input, #artForm textarea { padding:7px 9px; border:1px solid var(--line); border-radius:6px; width:100%; font-family:inherit; }
+  #artForm textarea { min-height:60px; resize:vertical; }
+  #preview { margin-top:6px; color:var(--mut); }
+  #preview img { max-width:240px; max-height:240px; border:1px solid var(--line); border-radius:6px; display:block; }
+  table { width:100%; border-collapse:collapse; }
+  table td, table th { border:1px solid var(--line); padding:6px 8px; text-align:left; }
+  table input { width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; }
+  .del { color:var(--err); border-color:var(--err); }
+  .status { padding:10px 18px; font-size:13px; color:var(--mut); min-height:20px; }
+  .status.ok { color:var(--ok); }
+  .status.err { color:var(--err); }
+  .status.warn { color:var(--warn); }
+  .sec-title { font-weight:600; margin:4px 0 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎨 Artful 标签管理后台</h1>
+  <div id="authBox"></div>
+</header>
+
+<details>
+  <summary>⚙️ 设置（OAuth App / 仓库路径，可改）</summary>
+  <div class="cfg-grid">
+    <label>Client ID</label><input id="s_clientId" placeholder="GitHub OAuth App 的 Client ID">
+    <label>Owner</label><input id="s_owner">
+    <label>Repo</label><input id="s_repo">
+    <label>Branch</label><input id="s_branch">
+    <label>artworks 路径</label><input id="s_artworks">
+    <label>mapping 路径</label><input id="s_mapping">
+    <label>图片目录</label><input id="s_images">
+    <label>回调地址</label><span class="redirect" id="redirectUri"></span>
+  </div>
+  <p class="hint" style="margin:8px 0 4px">OAuth App 的 <b>Authorization callback URL</b> 必须填上面的「回调地址」（即本页面地址）。权限勾 <code>public_repo</code> 即可。</p>
+  <button class="btn" id="saveCfg">保存设置</button>
+  <button class="btn" id="reloadBtn">重新加载数据</button>
+</details>
+
+<div class="tabs">
+  <div class="tab active" data-tab="art">作品管理</div>
+  <div class="tab" data-tab="map">落地链接</div>
+</div>
+
+<main>
+  <section class="panel active" id="tab-art">
+    <div class="toolbar">
+      <input id="artFilter" placeholder="搜索 leoNo / 标题 / 系列…" style="min-width:220px">
+      <button class="btn primary" id="addArt">+ 新增作品</button>
+      <button class="btn" id="saveArt">保存作品</button>
+      <button class="btn" id="delArt">删除当前</button>
+    </div>
+    <div class="layout">
+      <ul id="artList"></ul>
+      <form id="artForm" style="display:none">
+        <div class="row"><label>leoNo</label><input id="f_leoNo"></div>
+        <div class="row"><label>标题</label><input id="f_title"></div>
+        <div class="row"><label>系列</label><input id="f_series"></div>
+        <div class="row"><label>年份</label><input id="f_year"></div>
+        <div class="row"><label>分类</label><input id="f_category" placeholder="留空则等于系列"></div>
+        <div class="row"><label>尺寸</label><textarea id="f_sizeInfo"></textarea></div>
+        <div class="row"><label>描述</label><textarea id="f_description"></textarea></div>
+        <div class="row"><label>额外信息</label><textarea id="f_extraInfo"></textarea></div>
+        <div class="row"><label>收藏信息</label><input id="f_collectionInfo"></div>
+        <div class="row"><label>收藏记录</label><input id="f_collectionRecord"></div>
+        <div class="row"><label>标记 flag</label><input id="f_flag"></div>
+        <div class="row"><label>主图文件名</label><input id="f_mainImage"><div>
+          <input type="file" id="imgMain" accept="image/*">
+          <div id="preview">（无主图）</div>
+        </div></div>
+        <div class="row"><label>二维码图</label><input id="f_qrImage"><div><input type="file" id="imgQr" accept="image/*"></div></div>
+        <div class="row"><label>其他图(逗号分)</label><input id="f_otherImages"></div>
+        <div class="row"><label>子标签(逗号分)</label><input id="f_subtags"></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-map">
+    <div class="sec-title">落地链接（YJH-xxx → URL）</div>
+    <div class="toolbar">
+      <button class="btn primary" id="addMap">+ 新增</button>
+      <button class="btn" id="saveMap">保存落地链接</button>
+    </div>
+    <table>
+      <thead><tr><th style="width:200px">键 (YJH-xxx)</th><th>目标 URL</th><th style="width:80px">操作</th></tr></thead>
+      <tbody id="mapTable"></tbody>
+    </table>
+  </section>
+</main>
+
+<div class="status" id="status"></div>
+
+<script>
+  // 简单 tab 切换
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+    });
+  });
+</script>
+<script src="admin-github.js"></script>
+</body>
+</html>

@@ -139,7 +139,7 @@
     ul.innerHTML = '';
     filter = (filter || '').trim().toLowerCase();
     artworks.forEach(function (a, i) {
-      var label = (a.leoNo || '?') + ' · ' + (a.title || '(无标题)');
+      var label = (a['NO.'] || '?') + ' · ' + (a.title || '(无标题)');
       if (filter && (label + (a.series || '')).toLowerCase().indexOf(filter) < 0) return;
       var li = el('li', { class: i === currentIndex ? 'active' : '', onclick: function () { selectArt(i); } }, [label]);
       ul.appendChild(li);
@@ -149,9 +149,9 @@
   function blankArt() {
     var maxSerial = artworks.reduce(function (m, a) { return Math.max(m, a.serial || 0); }, 0);
     return {
-      serial: maxSerial + 1, leoNo: '', flag: '', year: '', series: '', title: '',
-      sizeInfo: '', description: '', extraInfo: '', collectionInfo: '', collectionRecord: '',
-      mainImage: '', qrImage: '', otherImages: [], category: '', subtags: [], seriesRaw: ''
+      serial: maxSerial + 1, 'NO.': '', flag: '', year: '', series: '', title: '',
+      size: '', material: '', description: '', extraInfo: '', collectionInfo: '', collectionRecord: '',
+      awardRecord: '', mainImage: '', qrImage: '', otherImages: [], category: '', subtags: [], seriesRaw: ''
     };
   }
 
@@ -161,16 +161,18 @@
     var a = artworks[i];
     var f = $('artForm');
     f.style.display = '';
-    $('f_leoNo').value = a.leoNo || '';
+    $('f_NO').value = a['NO.'] || '';
     $('f_title').value = a.title || '';
     $('f_series').value = a.series || '';
     $('f_year').value = a.year || '';
     $('f_category').value = a.category || '';
-    $('f_sizeInfo').value = a.sizeInfo || '';
+    $('f_size').value = a.size || '';
+    $('f_material').value = a.material || '';
     $('f_description').value = a.description || '';
     $('f_extraInfo').value = a.extraInfo || '';
     $('f_collectionInfo').value = a.collectionInfo || '';
     $('f_collectionRecord').value = a.collectionRecord || '';
+    $('f_awardRecord').value = a.awardRecord || '';
     $('f_flag').value = a.flag || '';
     $('f_mainImage').value = a.mainImage || '';
     $('f_qrImage').value = a.qrImage || '';
@@ -191,16 +193,18 @@
   function collectArt() {
     var a = artworks[currentIndex];
     if (!a) return null;
-    a.leoNo = $('f_leoNo').value.trim();
+    a['NO.'] = $('f_NO').value.trim();
     a.title = $('f_title').value.trim();
     a.series = $('f_series').value.trim();
     a.year = $('f_year').value.trim();
     a.category = $('f_category').value.trim() || a.series;
-    a.sizeInfo = $('f_sizeInfo').value;
+    a.size = $('f_size').value;
+    a.material = $('f_material').value.trim();
     a.description = $('f_description').value;
     a.extraInfo = $('f_extraInfo').value;
     a.collectionInfo = $('f_collectionInfo').value;
     a.collectionRecord = $('f_collectionRecord').value;
+    a.awardRecord = $('f_awardRecord').value;
     a.flag = $('f_flag').value.trim();
     a.mainImage = $('f_mainImage').value.trim();
     a.qrImage = $('f_qrImage').value.trim();
@@ -233,7 +237,7 @@
   }
   async function deleteArt() {
     if (currentIndex < 0) return;
-    if (!confirm('确定删除当前作品「' + (artworks[currentIndex].title || artworks[currentIndex].leoNo) + '」？')) return;
+    if (!confirm('确定删除当前作品「' + (artworks[currentIndex].title || artworks[currentIndex]['NO.']) + '」？')) return;
     artworks.splice(currentIndex, 1);
     currentIndex = -1;
     $('artForm').style.display = 'none';

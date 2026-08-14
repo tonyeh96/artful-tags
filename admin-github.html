@@ -86,7 +86,7 @@
 <main>
   <section class="panel active" id="tab-art">
     <div class="toolbar">
-      <input id="artFilter" placeholder="搜索 leoNo / 标题 / 系列…" style="min-width:220px">
+      <input id="artFilter" placeholder="搜索 NO. / 标题 / 系列…" style="min-width:220px">
       <button class="btn primary" id="addArt">+ 新增作品</button>
       <button class="btn" id="saveArt">保存作品</button>
       <button class="btn" id="delArt">删除当前</button>
@@ -94,24 +94,32 @@
     <div class="layout">
       <ul id="artList"></ul>
       <form id="artForm" style="display:none">
-        <div class="row"><label>leoNo</label><input id="f_leoNo"></div>
+        <div class="row"><label>编号 NO.</label><input id="f_NO" placeholder="如 YE250502（YE+对应编号，无空格）"></div>
         <div class="row"><label>标题</label><input id="f_title"></div>
         <div class="row"><label>系列</label><input id="f_series"></div>
+        <div class="row"><label>子标签(逗号分)</label><input id="f_subtags"></div>
         <div class="row"><label>年份</label><input id="f_year"></div>
         <div class="row"><label>分类</label><input id="f_category" placeholder="留空则等于系列"></div>
-        <div class="row"><label>尺寸</label><textarea id="f_sizeInfo"></textarea></div>
-        <div class="row"><label>描述</label><textarea id="f_description"></textarea></div>
-        <div class="row"><label>额外信息</label><textarea id="f_extraInfo"></textarea></div>
-        <div class="row"><label>收藏信息</label><input id="f_collectionInfo"></div>
-        <div class="row"><label>收藏记录</label><input id="f_collectionRecord"></div>
-        <div class="row"><label>标记 flag</label><input id="f_flag"></div>
-        <div class="row"><label>主图文件名</label><input id="f_mainImage"><div>
-          <input type="file" id="imgMain" accept="image/*">
-          <div id="preview">（无主图）</div>
+        <div class="row"><label>尺寸</label><textarea id="f_size" placeholder="仅填尺寸，如 100*80cm"></textarea></div>
+        <div class="row"><label>材料</label><input id="f_material" placeholder="如 丙烯布面"></div>
+        <div class="row"><label>作品图片</label><div>
+          <input id="f_mainImage" placeholder="主图文件名">
+          <div>
+            <input type="file" id="imgMain" accept="image/*">
+            <div id="preview">（无主图）</div>
+          </div>
         </div></div>
-        <div class="row"><label>二维码图</label><input id="f_qrImage"><div><input type="file" id="imgQr" accept="image/*"></div></div>
+        <div class="row"><label>作品描述</label><textarea id="f_description"></textarea></div>
+        <div class="row"><label>获奖记录</label><textarea id="f_awardRecord" placeholder="如 获XX奖 / 参展XX"></textarea></div>
+        <div class="row"><label>收藏记录</label><input id="f_collectionRecord"></div>
+        <div class="row"><label>收藏信息</label><input id="f_collectionInfo" placeholder="前台获奖角标用"></div>
+        <div class="row"><label>额外信息</label><textarea id="f_extraInfo" placeholder="前台二维码说明用"></textarea></div>
+        <div class="row"><label>二维码图片</label><div>
+          <input id="f_qrImage" placeholder="二维码文件名">
+          <div><input type="file" id="imgQr" accept="image/*"></div>
+        </div></div>
         <div class="row"><label>其他图(逗号分)</label><input id="f_otherImages"></div>
-        <div class="row"><label>子标签(逗号分)</label><input id="f_subtags"></div>
+        <div class="row"><label>标记 flag</label><input id="f_flag"></div>
       </form>
     </div>
   </section>
